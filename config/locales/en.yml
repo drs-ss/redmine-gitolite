@@ -30,7 +30,8 @@ en:
   notice_public_key_added: Public key was successfully added
 
   ## ERRORS
-  label_cannot_change_selinux: Cannot Change in Current Configuration
+  error_cannot_change_selinux: Cannot Change in Current Configuration
+  error_git_repository_does_not_exist: Repository does not exist. Create one using the instructions below.
 
   ## FIELDS
   field_public_key: Key
@@ -44,3 +45,20 @@ en:
   label_disabled: Disabled
   label_true: "True"
   label_false: "False"
+
+  ## GIT INSTRUCTIONS
+  label_git_setup: Git Setup
+  label_download_and_install_git: Download and Install Git
+
+  label_repository_setup: Repository Setup
+  label_checkin_existing_git_repo: Checkin an existing Git repository
+  label_initializing_repository: Initializing repository
+  label_upload_ssh_public_key: Upload SSH Public Key
+  label_git_permission_setup: Permission Setup
+  label_add_yourself_as_developer: Add yourself as a project developer
+
+  ## GIT SIDEBAR
+  label_git_repository_info: Repository Info
+  label_git_repository_name: Name
+  label_git_read_access: Read Access
+  label_git_ssh_access: SSH Access
