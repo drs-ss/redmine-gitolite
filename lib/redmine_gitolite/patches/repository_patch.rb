@@ -14,7 +14,9 @@ module RedmineGitolite
 
         def update_values
           if self.is_a?(Repository::Git)
-            self.url = File.join(GitoliteConfig.repository_absolute_base_path, GitoliteHosting.repository_name(self) + ".git")
+            new_url = File.join(GitoliteConfig.repository_absolute_base_path, GitoliteHosting.repository_name(self) + ".git")
+            self.url = new_url
+            self.root_url = new_url
             self.save!
           end
         end
