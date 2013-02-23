@@ -45,6 +45,7 @@ Setup
 .. code:: ruby
 
     $ sudo su - redmine
+    $ mkdir .ssh
     $ ssh-keygen -N '' -f ~/.ssh/redmine_gitolite_admin_id_rsa
 
 
