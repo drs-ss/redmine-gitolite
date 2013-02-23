@@ -81,9 +81,9 @@ Otherwise you can install Gitolite by following this :
 
       * run the following commands:
             
+            mkdir -p $HOME/bin
             source ~/.profile
             git clone git://github.com/sitaramc/gitolite
-            mkdir -p $HOME/bin
             gitolite/install -to $HOME/bin
             gitolite setup -pk redmine_gitolite_admin_id_rsa.pub
 
