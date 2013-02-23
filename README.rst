@@ -35,7 +35,7 @@ Setup
 .. code:: ruby
 
     $ cd redmine/plugins
-    $ git clone git://github.com/pitit-atchoum/redmine-gitolite.git redmine_gitolite
+    $ git clone git://github.com/jbox-web/redmine-gitolite.git redmine_gitolite
     $ cd ..
     $ RAILS_ENV=production rake db:migrate_plugins
 
@@ -46,6 +46,7 @@ Setup
 
     $ sudo su - redmine
     $ ssh-keygen -N '' -f ~/.ssh/redmine_gitolite_admin_id_rsa
+
 
 3. User running Redmine must have RW+ access to gitolite-admin (assuming that you have Gitolite installed).
 
@@ -76,19 +77,39 @@ Otherwise you can install Gitolite by following this :
 
             # set PATH so it includes user private bin if it exists
             if [ -d "$HOME/bin" ] ; then
-                PATH="$PATH:$HOME/bin"
+              PATH="$PATH:$HOME/bin"
             fi
 
       * run the following commands:
-            
-            mkdir -p $HOME/bin
-            source ~/.profile
+
+            mkdir $HOME/bin
+            source $HOME/.profile
             git clone git://github.com/sitaramc/gitolite
             gitolite/install -to $HOME/bin
             gitolite setup -pk redmine_gitolite_admin_id_rsa.pub
 
 
-4. Make sure that Redmine user has Gitolite server in his known_hosts list (This is also a good check to see if Gitolite works)
+4. Configure sudoers file
+
+.. code:: ruby
+
+  $ visudo
+  Add these lines (don't forget to replace user names)
+
+  <redmine user>   ALL=(<git user>)      NOPASSWD:ALL
+  <git user>       ALL=(<redmine user>)  NOPASSWD:ALL
+
+
+Also, the requiretty sudo setting can prevent the plugin from working correctly. Several users have reported this problem on CentOS. Check the Defaults directive in the sudoers file to see if this setting has been set.
+You address the problem by either removing requiretty from the Defaults directive, or by adding the following lines below the original Defaults directive to remove this requirement for only the two necessary users:
+
+.. code:: ruby
+
+  Defaults:<git user>      !requiretty
+  Defaults:<redmine user>  !requiretty
+
+
+5. Make sure that Redmine user has Gitolite server in his known_hosts list (This is also a good check to see if Gitolite works)
 
 .. code:: ruby
 
@@ -113,7 +134,8 @@ Or
         R W  gitolite-admin
         R W  testing
 
-5. Configure email and name of Gitolite user for your Redmine account
+
+6. Configure email and name of Gitolite user for your Redmine account
 
 .. code:: ruby
 
@@ -121,7 +143,8 @@ Or
     $ git config --global user.email "redmine@gitolite.org"
     $ git config --global user.name "Redmine Gitolite"
 
-6. Add post-receive hook to common Gitolite hooks (script is in contrib dir) and configure it (Redmine Host and API key)
+
+7. Add post-receive hook to common Gitolite hooks (script is in contrib dir) and configure it (Redmine Host and API key)
 
 .. code:: ruby
 
@@ -138,7 +161,8 @@ Or
     * [ set $REPO_UMASK = 0022; ]
     $ gl-setup
 
-7. Configure plugin in Redmine settings
+
+8. Configure plugin in Redmine settings
 
 Found a bug?
 ------------
