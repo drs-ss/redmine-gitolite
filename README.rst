@@ -35,7 +35,7 @@ Setup
 .. code:: ruby
 
     $ cd redmine/plugins
-    $ git clone git://github.com/jbox-web/redmine-gitolite.git redmine_gitolite
+    $ git clone git://github.com/jbox-web/redmine_gitolite.git
     $ cd ..
     $ RAILS_ENV=production rake db:migrate_plugins
 
