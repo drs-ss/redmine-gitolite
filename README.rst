@@ -1,4 +1,4 @@
-redmine-gitolite
+redmine_gitolite
 ================
 
 CURRENT HEAD VERSION WORKS WITH TRUNK REDMINE (certified with 2.2.3)
@@ -30,7 +30,7 @@ Other
 Setup
 -----
 
-1. Install Redmine and put this plugin in redmine/plugins directory and migrate database (plugins)
+1. Install Redmine and put this plugin in ``redmine/plugins`` directory and migrate database
 
 .. code:: ruby
 
@@ -50,7 +50,7 @@ Setup
 
 3. User running Redmine must have RW+ access to gitolite-admin (assuming that you have Gitolite installed).
 
-Otherwise you can install Gitolite by following this :
+Otherwise you can install Gitolite (v3) by following this :
 
 .. code:: ruby
 
@@ -100,7 +100,7 @@ Otherwise you can install Gitolite by following this :
   <git user>       ALL=(<redmine user>)  NOPASSWD:ALL
 
 
-Also, the requiretty sudo setting can prevent the plugin from working correctly. Several users have reported this problem on CentOS. Check the Defaults directive in the sudoers file to see if this setting has been set.
+Sometimes, the requiretty sudo setting can prevent the plugin from working correctly. Several users have reported this problem on CentOS. Check the Defaults directive in the sudoers file to see if this setting has been set.
 You address the problem by either removing requiretty from the Defaults directive, or by adding the following lines below the original Defaults directive to remove this requirement for only the two necessary users:
 
 .. code:: ruby
@@ -121,7 +121,7 @@ You should get something like that :
 
 .. code:: ruby
 
-    hello redmine_redmine, this is gitolite v2.3.1-0-g912a8bd-dt running on git 1.7.2.5
+    hello redmine_gitolite_admin_id_rsa, this is gitolite v2.3.1-0-g912a8bd-dt running on git 1.7.2.5
     the gitolite config gives you the following access:
         R   W  gitolite-admin
         @R_ @W_ testing
@@ -148,17 +148,29 @@ Or
 
 .. code:: ruby
 
-    $ sudo su - gitolite #login on gitolite user
+    $ sudo su - gitolite
+
     $ cat > .gitolite/hooks/common/post-receive
-    * [paste hook]
-    $ vim .gitolite/hooks/common/post-receive
+    * [paste hook from contrib dir]
+
     * [enable WS for repository management in administration->settings->repositories]
+
+    $ vim .gitolite/hooks/common/post-receive
     * [copy generated API key] (DEFAULT_REDMINE_KEY)
     * [set Redmine server URL] (DEFAULT_REDMINE_SERVER)
+
     $ chmod +x .gitolite/hooks/common/post-receive
+
     $ vim .gitolite.rc
-    * [add ".*" to the GL_GIT_CONFIG_KEYS setting
+    * If you are running Gitolite v2 :
+    * [add ".*" to the GL_GIT_CONFIG_KEYS setting]
+
+    * If you are running Gitolite v3 :
+    * [add ".*" to the GL_GIT_CONFIG_KEYS setting]
+
+    * In both cases add :
     * [ set $REPO_UMASK = 0022; ]
+
     $ gl-setup
 
 
