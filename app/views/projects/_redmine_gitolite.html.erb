@@ -14,7 +14,7 @@
     </p>
 
     <p>
-      <% if User.current.allowed_to?(:view_changesets, @project) %>
+      <% if User.current.allowed_to?(:commit_access, @project) %>
         <strong><%= l(:label_git_http_access) %> :</strong><br />
         <ul>
           <% @project.repositories.select{|r| r.is_a?(Repository::Git)}.each do |repo| %>
