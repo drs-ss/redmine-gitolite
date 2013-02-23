@@ -100,9 +100,9 @@ module GitoliteRedmine
       git_projects = projects.uniq.select{|p| p.gl_repos.any?}
       return if git_projects.empty?
 
-      clone_gitolite_admin_repo
-
       if GitoliteHosting.lock
+        clone_gitolite_admin_repo
+
         git_projects.each do |project|
           project.gl_repos.each do |repository|
             if repository.url != GitoliteHosting.repository_absolute_path(repository)
