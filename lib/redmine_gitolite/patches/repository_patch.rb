@@ -24,8 +24,12 @@ module RedmineGitolite
           return "#{project.identifier}/#{identifier}"
         end
 
-        def gitolite_http_url
+        def gitolite_browse_url
           return "http://#{GitoliteConfig.gitolite_server_domain}/projects/#{project.identifier}/repository/#{identifier}"
+        end
+
+        def gitolite_http_url
+          return "http://#{User.current.login}@#{GitoliteConfig.gitolite_server_domain}/#{project.identifier}/#{identifier}.git"
         end
 
         def gitolite_git_url

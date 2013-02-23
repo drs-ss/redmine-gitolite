@@ -60,5 +60,6 @@ de:
   ## GIT SIDEBAR
   label_git_repository_info: Repository Info
   label_git_repository_name: Name
-  label_git_read_access: Lesezugriff
+  label_git_browse_access: Browse Code
+  label_git_http_access: HTTP Zugriff
   label_git_ssh_access: SSH Zugriff
