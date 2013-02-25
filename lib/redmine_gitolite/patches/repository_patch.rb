@@ -31,7 +31,7 @@ module RedmineGitolite
         end
 
         def gitolite_http_url
-          return "http://#{User.current.login}@#{GitoliteConfig.gitolite_server_domain}/#{project.identifier}/#{identifier}.git"
+          return "http://#{User.current.login}@#{GitoliteConfig.gitolite_server_domain}/git/#{project.identifier}/#{identifier}.git"
         end
 
         def gitolite_git_url

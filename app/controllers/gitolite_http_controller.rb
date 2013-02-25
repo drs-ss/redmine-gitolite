@@ -7,7 +7,7 @@ require 'time'
 class GitoliteHttpController < ApplicationController
 
   # prevents login action to be filtered by check_if_login_required application scope filter
-  skip_before_filter :check_if_login_required
+  skip_before_filter :check_if_login_required, :verify_authenticity_token
 
   before_filter :authenticate
 
@@ -23,16 +23,7 @@ class GitoliteHttpController < ApplicationController
     puts "###################"
     puts cmd
     puts path
-    puts YAML::dump(@reqfile)
     puts "###################"
-
-    @dir = "#{GitoliteConfig.repository_absolute_base_path}#{path}"
-    puts @dir
-
-    puts "###################"
-
-    #~ @dir = get_git_dir(path)
-    #~ return render_not_found if !@dir
 
     Dir.chdir(@dir) do
       self.method(cmd).call()
@@ -47,14 +38,14 @@ class GitoliteHttpController < ApplicationController
     query_valid = false
     authentication_valid = true
 
-    my_url = "#{GitoliteConfig.repository_absolute_base_path}/#{params[:repo_path]}"
+    @dir = "#{GitoliteConfig.repository_absolute_base_path}/#{params[:repo_path]}"
 
     puts "###################"
-    puts my_url
+    puts @dir
     puts is_push
     puts "###################"
 
-    if (@repository = Repository.find_by_url(my_url)) && @repository.is_a?(Repository::Git)
+    if (@repository = Repository.find_by_url(@dir)) && @repository.is_a?(Repository::Git)
       if @project = @repository.project
         #~ if @repository.extra[:git_http] == 2 || (@repository.extra[:git_http] == 1 && is_ssl?)
           query_valid = true
@@ -87,18 +78,18 @@ class GitoliteHttpController < ApplicationController
   end
 
   SERVICES = [
-    ["POST", 'service_rpc',      "(.*?)/git-upload-pack$",  'upload-pack'],
-    ["POST", 'service_rpc',      "(.*?)/git-receive-pack$", 'receive-pack'],
+    ["POST", 'service_rpc',      "/git/(.*?)/git-upload-pack$",  'upload-pack'],
+    ["POST", 'service_rpc',      "/git/(.*?)/git-receive-pack$", 'receive-pack'],
 
-    ["GET",  'get_info_refs',    "(.*?)/info/refs$"],
-    ["GET",  'get_text_file',    "(.*?)/HEAD$"],
-    ["GET",  'get_text_file',    "(.*?)/objects/info/alternates$"],
-    ["GET",  'get_text_file',    "(.*?)/objects/info/http-alternates$"],
-    ["GET",  'get_info_packs',   "(.*?)/objects/info/packs$"],
-    ["GET",  'get_text_file',    "(.*?)/objects/info/[^/]*$"],
-    ["GET",  'get_loose_object', "(.*?)/objects/[0-9a-f]{2}/[0-9a-f]{38}$"],
-    ["GET",  'get_pack_file',    "(.*?)/objects/pack/pack-[0-9a-f]{40}\\.pack$"],
-    ["GET",  'get_idx_file',     "(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$"],
+    ["GET",  'get_info_refs',    "/git/(.*?)/info/refs$"],
+    ["GET",  'get_text_file',    "/git/(.*?)/HEAD$"],
+    ["GET",  'get_text_file',    "/git/(.*?)/objects/info/alternates$"],
+    ["GET",  'get_text_file',    "/git/(.*?)/objects/info/http-alternates$"],
+    ["GET",  'get_info_packs',   "/git/(.*?)/objects/info/packs$"],
+    ["GET",  'get_text_file',    "/git/(.*?)/objects/info/[^/]*$"],
+    ["GET",  'get_loose_object', "/git/(.*?)/objects/[0-9a-f]{2}/[0-9a-f]{38}$"],
+    ["GET",  'get_pack_file',    "/git/(.*?)/objects/pack/pack-[0-9a-f]{40}\\.pack$"],
+    ["GET",  'get_idx_file',     "/git/(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$"],
   ]
 
   def initialize()
@@ -109,27 +100,6 @@ class GitoliteHttpController < ApplicationController
     }
   end
 
-  #~ def set_config_setting(key, value)
-    #~ @config[key] = value
-  #~ end
-
-  #~ def call(env)
-    #~ @env = env
-    #~ @req = Rack::Request.new(env)
-
-    #~ cmd, path, @reqfile, @rpc = match_routing
-
-    #~ return render_method_not_allowed if cmd == 'not_allowed'
-    #~ return render_not_found if !cmd
-
-    #~ @dir = get_git_dir(path)
-    #~ return render_not_found if !@dir
-
-    #~ Dir.chdir(@dir) do
-      #~ self.method(cmd).call()
-    #~ end
-  #~ end
-
   # ---------------------------------
   # actual command handling functions
   # ---------------------------------
@@ -138,21 +108,21 @@ class GitoliteHttpController < ApplicationController
     return render_no_access if !has_access(@rpc, true)
     input = read_body
 
-    response = Rack::Response.new
-    render :text => proc { |response, output|
-      response.status = 200
-      response["Content-Type"] = "application/x-git-%s-result" % @rpc
-      response.finish do
-        command = git_command("#{@rpc} --stateless-rpc #{@dir}")
-        IO.popen(command, File::RDWR) do |pipe|
-          pipe.write(input)
-          while !pipe.eof?
-            block = pipe.read(8192) # 8M at a time
-            response.write block    # steam it to the client
-          end
+    self.response.headers["Content-Type"] = "application/x-git-%s-result" % @rpc
+    self.response.status = 200
+
+    command = git_command("#{@rpc} --stateless-rpc .")
+
+    IO.popen(command, File::RDWR) do |pipe|
+      pipe.write(input)
+      while !pipe.eof?
+        block = pipe.read(8192) # 8M at a time
+        self.response_body = Enumerator.new do |y|
+          y << block
         end
       end
-    }
+    end
+
   end
 
   def get_info_refs
@@ -162,16 +132,15 @@ class GitoliteHttpController < ApplicationController
       command = git_command("#{service_name} --stateless-rpc --advertise-refs .")
       refs = %x[#{command}]
 
-      response = Rack::Response.new
-      render :text => proc { |response, output|
-        response.status = 200
-        response["Content-Type"] = "application/x-git-%s-advertisement" % service_name
-        hdr_nocache
-        response.write(pkt_write("# service=git-#{service_name}\n"))
-        response.write(pkt_flush)
-        response.write(refs)
-        response.finish
-      }
+      self.response.status = 200
+      self.response.headers["Content-Type"] = "application/x-git-#{service_name}-advertisement"
+      hdr_nocache
+
+      self.response_body = Enumerator.new do |y|
+        y << pkt_write("# service=git-#{service_name}\n")
+        y << pkt_flush
+        y << refs
+      end
 
     else
       dumb_info_refs
@@ -180,38 +149,38 @@ class GitoliteHttpController < ApplicationController
 
   def dumb_info_refs
     update_server_info
-    send_file(@reqfile, "text/plain; charset=utf-8") do
+    internal_send_file(@reqfile, "text/plain; charset=utf-8") do
       hdr_nocache
     end
   end
 
   def get_info_packs
     # objects/info/packs
-    send_file(@reqfile, "text/plain; charset=utf-8") do
+    internal_send_file(@reqfile, "text/plain; charset=utf-8") do
       hdr_nocache
     end
   end
 
   def get_loose_object
-    send_file(@reqfile, "application/x-git-loose-object") do
+    internal_send_file(@reqfile, "application/x-git-loose-object") do
       hdr_cache_forever
     end
   end
 
   def get_pack_file
-    send_file(@reqfile, "application/x-git-packed-objects") do
+    internal_send_file(@reqfile, "application/x-git-packed-objects") do
       hdr_cache_forever
     end
   end
 
   def get_idx_file
-    send_file(@reqfile, "application/x-git-packed-objects-toc") do
+    internal_send_file(@reqfile, "application/x-git-packed-objects-toc") do
       hdr_cache_forever
     end
   end
 
   def get_text_file
-    send_file(@reqfile, "text/plain") do
+    internal_send_file(@reqfile, "text/plain") do
       hdr_nocache
     end
   end
@@ -223,7 +192,7 @@ class GitoliteHttpController < ApplicationController
   F = ::File
 
   # some of this borrowed from the Rack::File implementation
-  def send_file(reqfile, content_type)
+  def internal_send_file(reqfile, content_type)
     reqfile = File.join(@dir, reqfile)
 
     return render_not_found if !F.exists?(reqfile)
@@ -234,54 +203,26 @@ class GitoliteHttpController < ApplicationController
     puts F.mtime(reqfile).httpdate
     puts "####################"
 
-    #~ response = Rack::Response.new
-    #~ render :text => proc { |response, output|
-      #~ response.status = 200
-      #~ response["Content-Type"] = "application/x-git-%s-advertisement" % service_name
-      #~ hdr_nocache
-      #~ response.write(pkt_write("# service=git-#{service_name}\n"))
-      #~ response.write(pkt_flush)
-      #~ response.write(refs)
-      #~ response.finish
-    #~ }
+    self.response.status = 200
+    self.response.headers["Last-Modified"] = F.mtime(reqfile).httpdate
 
-    response = Rack::Response.new
-    render :text => proc { |response, output|
-      response.status = 200
-      response["Content-Type"]  = content_type
-      response["Last-Modified"] = F.mtime(reqfile).httpdate
-
-      #~ yield
-
-      #~ if size = F.size?(reqfile)
-        #~ response["Content-Length"] = size.to_s
-        #~ response.finish do
-          #~ F.open(reqfile, "rb") do |file|
-            #~ while part = file.read(8192)
-              #~ response.write part
-            #~ end
-          #~ end
+    if size = F.size?(reqfile)
+      puts "COUCOU 1"
+      self.response.headers["Content-Length"] = size.to_s
+      send_file reqfile, :type => content_type
+      #~ F.open(reqfile, "rb") do |file|
+        #~ while part = file.read(8192)
+          #~ response.write part
         #~ end
-      #~ else
-        body = [F.read(reqfile)]
-        size = Rack::Utils.bytesize(body.first)
-        response["Content-Length"] = size
-        #~ response.write body
-        response.write(pkt_write("#{body}"))
-        response.write(pkt_flush)
-        response.finish
       #~ end
-    }
-
-  end
-
-  def get_git_dir(path)
-    root = @config[:project_root] || `pwd`
-    path = File.join(root, path)
-    if File.exists?(path) # TODO: check is a valid git directory
-      return path
+    else
+      puts "COUCOU 2"
+      body = [F.read(reqfile)]
+      size = Rack::Utils.bytesize(body.first)
+      self.response.headers["Content-Length"] = size
+      send_file reqfile, :type => content_type
     end
-    false
+
   end
 
   def get_service_type
@@ -299,7 +240,15 @@ class GitoliteHttpController < ApplicationController
         return ['not_allowed'] if method != @req.request_method
         cmd = handler
         path = m[1]
-        file = @req.path_info.sub(path + '/', '')
+        file = @req.path_info.sub('/git/' + path + '/', '')
+
+        puts "####################"
+        puts "path      : #{path}"
+        puts "path info : #{@req.path_info}"
+        puts "file      : #{file}"
+        puts "rpc       : #{rpc}"
+        puts "####################"
+
         return [cmd, path, file, rpc]
       end
     end
@@ -349,7 +298,7 @@ class GitoliteHttpController < ApplicationController
   end
 
   def git_command(command)
-    return "#{GitoliteHosting.git_user_runner()} cd #{@dir} && git #{command} "
+    return "#{GitoliteHosting.git_user_runner()} 'cd #{@dir} && GL_BYPASS_UPDATE_HOOK=true git #{command}'"
   end
 
   # --------------------------------------
@@ -393,16 +342,16 @@ class GitoliteHttpController < ApplicationController
   # ------------------------
 
   def hdr_nocache
-    @res["Expires"] = "Fri, 01 Jan 1980 00:00:00 GMT"
-    @res["Pragma"] = "no-cache"
-    @res["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+    self.response.headers["Expires"] = "Fri, 01 Jan 1980 00:00:00 GMT"
+    self.response.headers["Pragma"] = "no-cache"
+    self.response.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
   end
 
   def hdr_cache_forever
     now = Time.now().to_i
-    @res["Date"] = now.to_s
-    @res["Expires"] = (now + 31536000).to_s;
-    @res["Cache-Control"] = "public, max-age=31536000";
+    self.response.headers["Date"] = now.to_s
+    self.response.headers["Expires"] = (now + 31536000).to_s;
+    self.response.headers["Cache-Control"] = "public, max-age=31536000";
   end
 
 end
