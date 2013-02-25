@@ -12,18 +12,20 @@ class GitoliteHttpController < ApplicationController
   before_filter :authenticate
 
   def index()
+
+    puts "###### AUTHENTICATED ######"
+    puts "repo_dir  : #{@dir}"
+    puts "is_push   : #{@is_push}"
+    puts "user_name : #{@user.login}"
+    puts "##########################"
+
     @env = request.env
     @req = Rack::Request.new(request.env)
 
-    cmd, path, @reqfile, @rpc = match_routing
+    cmd, path, @requested_file, @rpc = match_routing
 
     return render_method_not_allowed if cmd == 'not_allowed'
     return render_not_found if !cmd
-
-    puts "###################"
-    puts cmd
-    puts path
-    puts "###################"
 
     Dir.chdir(@dir) do
       self.method(cmd).call()
@@ -34,28 +36,29 @@ class GitoliteHttpController < ApplicationController
   private
 
   def authenticate
-    is_push = (params[:path][0] == "git-receive-pack")
+
     query_valid = false
     authentication_valid = true
 
+    @is_push = (params[:path] == "git-receive-pack")
     @dir = "#{GitoliteConfig.repository_absolute_base_path}/#{params[:repo_path]}"
 
-    puts "###################"
-    puts @dir
-    puts is_push
-    puts "###################"
+    puts "###### AUTHENTICATION ######"
+    puts "repo_dir : #{@dir}"
+    puts "is_push  : #{@is_push}"
+    puts "############################"
 
     if (@repository = Repository.find_by_url(@dir)) && @repository.is_a?(Repository::Git)
       if @project = @repository.project
         #~ if @repository.extra[:git_http] == 2 || (@repository.extra[:git_http] == 1 && is_ssl?)
           query_valid = true
           allow_anonymous_read = @project.is_public
-          if is_push || (!allow_anonymous_read)
+          if @is_push || (!allow_anonymous_read)
             authentication_valid = false
             authenticate_or_request_with_http_basic do |login, password|
               user = User.find_by_login(login);
               if user.is_a?(User)
-                if user.allowed_to?( :commit_access, @project ) || ((!is_push) && user.allowed_to?( :view_changesets, @project ))
+                if user.allowed_to?( :commit_access, @project ) || ((!@is_push) && user.allowed_to?( :view_changesets, @project ))
                   authentication_valid = user.check_password?(password)
                   @user = user
                 end
@@ -149,88 +152,33 @@ class GitoliteHttpController < ApplicationController
 
   def dumb_info_refs
     update_server_info
-    internal_send_file(@reqfile, "text/plain; charset=utf-8") do
-      hdr_nocache
-    end
+    internal_send_file(@requested_file, "text/plain; charset=utf-8", hdr_nocache)
   end
 
   def get_info_packs
     # objects/info/packs
-    internal_send_file(@reqfile, "text/plain; charset=utf-8") do
-      hdr_nocache
-    end
+    internal_send_file(@requested_file, "text/plain; charset=utf-8", hdr_nocache)
   end
 
   def get_loose_object
-    internal_send_file(@reqfile, "application/x-git-loose-object") do
-      hdr_cache_forever
-    end
+    internal_send_file(@requested_file, "application/x-git-loose-object", hdr_cache_forever)
   end
 
   def get_pack_file
-    internal_send_file(@reqfile, "application/x-git-packed-objects") do
-      hdr_cache_forever
-    end
+    internal_send_file(@requested_file, "application/x-git-packed-objects", hdr_cache_forever)
   end
 
   def get_idx_file
-    internal_send_file(@reqfile, "application/x-git-packed-objects-toc") do
-      hdr_cache_forever
-    end
+    internal_send_file(@requested_file, "application/x-git-packed-objects-toc", hdr_cache_forever)
   end
 
   def get_text_file
-    internal_send_file(@reqfile, "text/plain") do
-      hdr_nocache
-    end
+    internal_send_file(@requested_file, "text/plain", hdr_nocache)
   end
 
   # ------------------------
   # logic helping functions
   # ------------------------
-
-  F = ::File
-
-  # some of this borrowed from the Rack::File implementation
-  def internal_send_file(reqfile, content_type)
-    reqfile = File.join(@dir, reqfile)
-
-    return render_not_found if !F.exists?(reqfile)
-
-    puts "####################"
-    puts reqfile
-    puts content_type
-    puts F.mtime(reqfile).httpdate
-    puts "####################"
-
-    self.response.status = 200
-    self.response.headers["Last-Modified"] = F.mtime(reqfile).httpdate
-
-    if size = F.size?(reqfile)
-      puts "COUCOU 1"
-      self.response.headers["Content-Length"] = size.to_s
-      send_file reqfile, :type => content_type
-      #~ F.open(reqfile, "rb") do |file|
-        #~ while part = file.read(8192)
-          #~ response.write part
-        #~ end
-      #~ end
-    else
-      puts "COUCOU 2"
-      body = [F.read(reqfile)]
-      size = Rack::Utils.bytesize(body.first)
-      self.response.headers["Content-Length"] = size
-      send_file reqfile, :type => content_type
-    end
-
-  end
-
-  def get_service_type
-    service_type = @req.params['service']
-    return false if !service_type
-    return false if service_type[0, 4] != 'git-'
-    service_type.gsub('git-', '')
-  end
 
   def match_routing
     cmd = nil
@@ -242,18 +190,67 @@ class GitoliteHttpController < ApplicationController
         path = m[1]
         file = @req.path_info.sub('/git/' + path + '/', '')
 
-        puts "####################"
+        puts "###### ROUTING ######"
         puts "path      : #{path}"
         puts "path info : #{@req.path_info}"
         puts "file      : #{file}"
         puts "rpc       : #{rpc}"
-        puts "####################"
+        puts "#####################"
 
         return [cmd, path, file, rpc]
       end
     end
     return nil
   end
+
+
+  def internal_send_file(requested_file, content_type, cache_parameter)
+    requested_file = File.join(@dir, requested_file)
+
+    return render_not_found if !File.exists?(requested_file)
+    return render_not_found if !File.size?(requested_file)
+
+    last_modified = File.mtime(requested_file).httpdate
+    file_size = File.size?(requested_file)
+
+    puts "###### SEND FILE ######"
+    puts "requested_file : #{requested_file}"
+    puts "content_type   : #{content_type}"
+    puts "last_modified  : #{last_modified}"
+    puts "file_size      : #{file_size}"
+    puts "#######################"
+
+    self.response.status = 200
+    self.response.headers["Last-Modified"] = last_modified
+    self.response.headers["Content-Length"] = file_size.to_s
+    cache_parameter
+
+    send_file requested_file, :type => content_type
+
+  end
+
+
+  def read_body
+    puts "###### READ BODY ######"
+    if @env["HTTP_CONTENT_ENCODING"] =~ /gzip/
+      puts "encoding : gzip"
+      input = Zlib::GzipReader.new(@req.body).read
+    else
+      puts "encoding : flat"
+      input = @req.body.read
+    end
+    puts "#######################"
+    return input
+  end
+
+
+  def get_service_type
+    service_type = @req.params['service']
+    return false if !service_type
+    return false if service_type[0, 4] != 'git-'
+    service_type.gsub('git-', '')
+  end
+
 
   def has_access(rpc, check_content_type = false)
     if check_content_type
@@ -269,6 +266,7 @@ class GitoliteHttpController < ApplicationController
     return get_config_setting(rpc)
   end
 
+
   def get_config_setting(service_name)
     service_name = service_name.gsub('-', '')
     setting = get_git_config("http.#{service_name}")
@@ -279,23 +277,18 @@ class GitoliteHttpController < ApplicationController
     end
   end
 
+
   def get_git_config(config_name)
     command = git_command("config #{config_name}")
     %x[#{command}].chomp
   end
 
-  def read_body
-    if @env["HTTP_CONTENT_ENCODING"] =~ /gzip/
-      input = Zlib::GzipReader.new(@req.body).read
-    else
-      input = @req.body.read
-    end
-  end
 
   def update_server_info
     command = git_command('update-server-info')
     %x[#{command}]
   end
+
 
   def git_command(command)
     return "#{GitoliteHosting.git_user_runner()} 'cd #{@dir} && GL_BYPASS_UPDATE_HOOK=true git #{command}'"
@@ -305,24 +298,26 @@ class GitoliteHttpController < ApplicationController
   # HTTP error response handling functions
   # --------------------------------------
 
-  PLAIN_TYPE = {"Content-Type" => "text/plain"}
-
   def render_method_not_allowed
-    if @env['SERVER_PROTOCOL'] == "HTTP/1.1"
-      [405, PLAIN_TYPE, ["Method Not Allowed"]]
+    puts "###### HTTP ERRORS ######"
+    if request.env['SERVER_PROTOCOL'] == "HTTP/1.1"
+      puts "method : not allowed"
+      head :method_not_allowed
     else
-      [400, PLAIN_TYPE, ["Bad Request"]]
+      puts "method : bad request"
+      head :bad_request
     end
+    puts "#########################"
+    return head
   end
 
   def render_not_found
-    [404, PLAIN_TYPE, ["Not Found"]]
+    head :not_found
   end
 
   def render_no_access
-    [403, PLAIN_TYPE, ["Forbidden"]]
+    head :forbidden
   end
-
 
   # ------------------------------
   # packet-line handling functions
