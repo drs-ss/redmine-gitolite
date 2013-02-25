@@ -1,42 +1,36 @@
 <%
-  gitoliteIdentityPrivateKeyFile     = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteIdentityPrivateKeyFile].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteIdentityPrivateKeyFile] : (ENV['HOME'] + "/.ssh/redmine_gitolite_admin_id_rsa").to_s
-  gitoliteIdentityPublicKeyFile      = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteIdentityPublicKeyFile].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteIdentityPublicKeyFile] : (ENV['HOME'] + "/.ssh/redmine_gitolite_admin_id_rsa.pub").to_s
-  gitoliteRepositoryAbsoluteBasePath = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteRepositoryAbsoluteBasePath].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteRepositoryAbsoluteBasePath] : '/home/git/repositories/'
-  gitoliteUser                       = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteUser].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteUser] : 'git'
-  gitoliteServer                     = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteServer].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteServer] : 'localhost'
-  gitoliteServerDomain               = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteServerDomain].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteServerDomain] : 'example.com'
-  gitoliteLockWaitTime               = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteLockWaitTime].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteLockWaitTime] : '10'
-  gitoliteAllProjectsUseGit          = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteAllProjectsUseGit].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteAllProjectsUseGit] : true
+  gitoliteIdentityPrivateKeyFile       = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteIdentityPrivateKeyFile].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteIdentityPrivateKeyFile] : (ENV['HOME'] + "/.ssh/redmine_gitolite_admin_id_rsa").to_s
+  gitoliteRepositoryAbsoluteBasePath   = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteRepositoryAbsoluteBasePath].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteRepositoryAbsoluteBasePath] : '/home/git/repositories/'
+  gitoliteUser                         = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteUser].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteUser] : 'git'
+  gitoliteServerDomain                 = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteServerDomain].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteServerDomain] : 'example.com'
+  gitoliteSmartHttpPrefix              = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteSmartHttpPrefix].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteSmartHttpPrefix] : 'smart'
+  gitoliteLockWaitTime                 = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteLockWaitTime].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteLockWaitTime] : '10'
+  gitoliteSslEnabled                   = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteSslEnabled].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteSslEnabled] : false
+  gitoliteAllProjectsUseGit            = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteAllProjectsUseGit].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteAllProjectsUseGit] : true
+  gitoliteRecycleBinDeleteRepositories = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteRecycleBinDeleteRepositories].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteRecycleBinDeleteRepositories] : true
+  gitoliteRecycleBinExpireTime         = (!Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite[:gitoliteRecycleBinExpireTime].nil?) ? Setting.plugin_redmine_gitolite[:gitoliteRecycleBinExpireTime] : '24.0'
 %>
 
 <p>
+  <label><%= l(:label_gitolite_all_projects_use_git)%></label>
+  <%= select_tag("settings[gitoliteAllProjectsUseGit]", options_for_select([[l(:label_enabled), 'true'], [l(:label_disabled), 'false']], gitoliteAllProjectsUseGit)) %>
+  <br />
+</p>
+
+<br />
+<hr />
+<br />
+
+<h2><%= l(:label_gitolite_ssh_settings) %> :</h2>
+<p>
   <label><%= l(:label_gitolite_identity_private_key_file) %>
   <% if !GitoliteHosting.bin_dir_writeable? %>
-    <br /><em>[ <%= l(:label_cannot_change_selinux) %> ]</em>
+    <br /><em>[ <%= l(:error_cannot_change_selinux) %> ]</em>
   <% end %>
   </label>
   <%= text_field_tag("settings[gitoliteIdentityPrivateKeyFile]", gitoliteIdentityPrivateKeyFile, :size => 90) %>
   <br />
-</p>
-
-<br />
-
-<p>
-  <label><%= l(:label_gitolite_identity_public_key_file) %>
-  <% if !GitoliteHosting.bin_dir_writeable? %>
-    <br /><em>[ <%= l(:label_cannot_change_selinux) %> ]</em>
-  <% end %>
-  </label>
-  <%= text_field_tag("settings[gitoliteIdentityPublicKeyFile]", gitoliteIdentityPublicKeyFile, :size => 90) %>
-  <br />
-</p>
-
-<br />
-
-<p>
-  <label><%= raw l(:label_gitolite_repositories_absolute_base_path)%></label>
-  <%= text_field_tag("settings[gitoliteRepositoryAbsoluteBasePath]", gitoliteRepositoryAbsoluteBasePath, :size => 90) %>
-  <br />
+  <em>[ <%= l(:label_gitolite_identity_private_key_file_desc) %> ]</em>
 </p>
 
 <br />
@@ -44,27 +38,21 @@
 <p>
   <label><%= raw l(:label_gitolite_username) %>
   <% if !GitoliteHosting.bin_dir_writeable? %>
-    <br /><em>[ <%= l(:label_cannot_change_selinux) %> ]</em>
+    <br /><em>[ <%= l(:error_cannot_change_selinux) %> ]</em>
   <% end %>
   </label>
-  <%= text_field_tag("settings[gitoliteUser]", gitoliteUser.split(/[\r\n\t ,;]+/).join("\n"), :size => 10) %>
+  <%= text_field_tag("settings[gitoliteUser]", gitoliteUser, :size => 10) %>
   <br />
+  <em>[ <%= l(:label_gitolite_username_desc) %> ]</em>
 </p>
 
 <br />
 
 <p>
-  <label><%= raw l(:label_gitolite_server)%></label>
-  <%= text_field_tag("settings[gitoliteServer]", gitoliteServer.split(/[\r\n\t ,;]+/).join("\n"), :size => 40) %>
+  <label><%= l(:label_gitolite_repositories_absolute_base_path)%></label>
+  <%= text_field_tag("settings[gitoliteRepositoryAbsoluteBasePath]", gitoliteRepositoryAbsoluteBasePath, :size => 90) %>
   <br />
-</p>
-
-<br />
-
-<p>
-  <label><%= raw l(:label_gitolite_server_domain)%></label>
-  <%= text_field_tag("settings[gitoliteServerDomain]", gitoliteServerDomain.split(/[\r\n\t ,;]+/).join("\n"), :size => 40) %>
-  <br />
+  <em>[ <%= l(:label_gitolite_repositories_absolute_base_path_desc) %> ]</em>
 </p>
 
 <br />
@@ -73,12 +61,55 @@
   <label><%= raw l(:label_gitolite_lock_wait_time)%></label>
   <%= text_field_tag("settings[gitoliteLockWaitTime]", gitoliteLockWaitTime, :size => 10) %>
   <br />
+  <em>[ <%= l(:label_gitolite_lock_wait_time_desc) %> ]</em>
+</p>
+
+<br />
+<hr />
+<br />
+
+<h2><%= l(:label_gitolite_http_settings) %> :</h2>
+<p>
+  <label><%= raw l(:label_gitolite_server_domain)%></label>
+  <%= text_field_tag("settings[gitoliteServerDomain]", gitoliteServerDomain, :size => 40) %>
+  <br />
+  <em>[ <%= l(:label_gitolite_server_domain_desc) %> ]</em>
 </p>
 
 <br />
 
 <p>
-  <label><%= l(:label_gitolite_all_projects_use_git)%></label>
-  <%= select_tag("settings[gitoliteAllProjectsUseGit]", options_for_select([[l(:label_enabled), 'true'], [l(:label_disabled), 'false']], gitoliteAllProjectsUseGit)) %>
+  <label><%= l(:label_gitolite_smart_http_prefix)%></label>
+  <%= text_field_tag("settings[gitoliteSmartHttpPrefix]", gitoliteSmartHttpPrefix, :size => 40) %>
   <br />
+  <em>[ <%= l(:label_gitolite_smart_http_prefix_desc) %> ]</em>
+</p>
+
+<br />
+
+<p>
+  <label><%= l(:label_gitolite_ssl_enabled)%></label>
+  <%= select_tag("settings[gitoliteSslEnabled]", options_for_select([[l(:label_enabled), 'true'], [l(:label_disabled), 'false']], gitoliteSslEnabled)) %>
+  <br />
+</p>
+
+<br />
+<hr />
+<br />
+
+<h2><%= l(:label_gitolite_recycle_bin_settings) %> :</h2>
+<p>
+  <label><%= l(:label_delete_git_repositories)%></label>
+  <%= select_tag("settings[gitoliteRecycleBinDeleteRepositories]", options_for_select([[l(:label_enabled), 'true'], [l(:label_disabled), 'false']], gitoliteRecycleBinDeleteRepositories)) %>
+  <br />
+  <em>[ <%= l(:label_delete_git_repositories_desc) %> ]</em>
+</p>
+
+<br />
+
+<p>
+  <label><%= l(:label_gitolite_recycle_expire_time)%></label>
+  <%= text_field_tag("settings[gitoliteRecycleBinExpireTime]", gitoliteRecycleBinExpireTime, :size => 10) %>
+  <br />
+  <em>[ <%= l(:label_gitolite_recycle_expire_time_desc) %> ]</em>
 </p>

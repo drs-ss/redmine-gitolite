@@ -2,28 +2,48 @@ en:
 
   ## GITOLITE SETTINGS
   label_gitolite_settings: Gitolite Settings
-  label_gitolite_identity_private_key_file: Gitolite SSH Identity File (Private Key)
-  label_gitolite_identity_public_key_file: Gitolite SSH Identity File (Public Key)
-  label_gitolite_repositories_absolute_base_path: Gitolite Repositories Base Path <br /> (Must exist and be absolute, needed to browse code)
-  label_gitolite_username: Gitolite Username <br /> (Unix username)
-  label_gitolite_server: Gitolite Server <br /> ('localhost' most of the time)
-  label_gitolite_server_domain: Gitolite Server Domain <br /> (Needed for access URL)
-  label_gitolite_lock_wait_time: Synchronization Lock Wait Time <br /> (in seconds)
+
+  label_gitolite_ssh_settings: Gitolite SSH Access
+
+  label_gitolite_identity_private_key_file: Gitolite SSH Identity File
+  label_gitolite_identity_private_key_file_desc: Private Key
+
+  label_gitolite_repositories_absolute_base_path: Gitolite Repositories Path
+  label_gitolite_repositories_absolute_base_path_desc: Must exist and be absolute, needed to browse code
+
+  label_gitolite_username: Gitolite Username
+  label_gitolite_username_desc: Unix username
+
+  label_gitolite_lock_wait_time: Synchronization Lock Wait Time
+  label_gitolite_lock_wait_time_desc: in seconds
+
+  label_gitolite_http_settings: Gitolite HTTP Access
+
+  label_gitolite_server_domain: Gitolite Server Domain
+  label_gitolite_server_domain_desc: Needed for access URL
+
+  label_gitolite_smart_http_prefix: Gitolite Smart HTTP prefix
+  label_gitolite_smart_http_prefix_desc: Optional
+
+  label_gitolite_ssl_enabled: SSL Enabled?
+
   label_gitolite_all_projects_use_git: Automatically Initialize Git Repositories For New Projects
 
   ## RECYCLE BIN SETTINGS
-  label_gitolite_recycle_bin_settings: Gitolite RecycleBin Settings
-  label_gitolite_recycle_base_path: Gitolite Recycle Bin Base Path <br/ > (Relative to Gitolite user's home)
-  label_gitolite_recycle_expire_time: Expire Time for Repositories in Recycle Bin <br /> (in hours)
-  label_delete_git_repositories: Delete Git Repository When Project Deleted <br /> (will be place in Recycle Bin)
+  label_gitolite_recycle_bin_settings: Gitolite Recycle Bin
+  label_gitolite_recycle_expire_time: Expire Time for Repositories in Recycle Bin
+  label_gitolite_recycle_expire_time_desc: in hours
+  label_delete_git_repositories: Delete Git Repository When Project Deleted
+  label_delete_git_repositories_desc: Will be place in Recycle Bin
 
   ## VALIDATION SETTINGS
   label_gitolite_validation_settings: Gitolite Validation
   label_sudo_web_to_git_user: Web user is able to sudo to Git user?
   label_sudo_git_to_web_user: Git user is able to sudo to Web user?
   label_gitolite_admin_url: Gitolite Admin URL
-  label_gitolite_read_only_url: Gitolite Read Only URL
-  label_gitolite_developer_url: Gitolite Developer URL
+  label_gitolite_browse_url: Gitolite Browse Code URL
+  label_gitolite_http_url: Gitolite Smart HTTP URL
+  label_gitolite_ssh_url: Gitolite SSH URL
 
   ## NOTICES
   notice_public_key_updated: Public key was successfully updated

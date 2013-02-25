@@ -13,22 +13,22 @@ class GitoliteHttpController < ApplicationController
 
   def index()
 
+    @request = Rack::Request.new(request.env)
+
+    command, path, @requested_file, @rpc = match_routing
+
+    return render_method_not_allowed if command == 'not_allowed'
+    return render_not_found if !command
+
     puts "###### AUTHENTICATED ######"
-    puts "repo_dir  : #{@dir}"
+    puts "repo_dir  : #{@repo_dir}"
     puts "is_push   : #{@is_push}"
     puts "user_name : #{@user.login}"
+    puts "command   : #{command}"
     puts "##########################"
 
-    @env = request.env
-    @req = Rack::Request.new(request.env)
-
-    cmd, path, @requested_file, @rpc = match_routing
-
-    return render_method_not_allowed if cmd == 'not_allowed'
-    return render_not_found if !cmd
-
-    Dir.chdir(@dir) do
-      self.method(cmd).call()
+    Dir.chdir(@repo_dir) do
+      self.method(command).call()
     end
 
   end
@@ -41,14 +41,14 @@ class GitoliteHttpController < ApplicationController
     authentication_valid = true
 
     @is_push = (params[:path] == "git-receive-pack")
-    @dir = "#{GitoliteConfig.repository_absolute_base_path}/#{params[:repo_path]}"
+    @repo_dir = "#{GitoliteConfig.repository_absolute_base_path}/#{params[:repo_path]}"
 
     puts "###### AUTHENTICATION ######"
-    puts "repo_dir : #{@dir}"
+    puts "repo_dir : #{@repo_dir}"
     puts "is_push  : #{@is_push}"
     puts "############################"
 
-    if (@repository = Repository.find_by_url(@dir)) && @repository.is_a?(Repository::Git)
+    if (@repository = Repository.find_by_url(@repo_dir)) && @repository.is_a?(Repository::Git)
       if @project = @repository.project
         #~ if @repository.extra[:git_http] == 2 || (@repository.extra[:git_http] == 1 && is_ssl?)
           query_valid = true
@@ -81,18 +81,18 @@ class GitoliteHttpController < ApplicationController
   end
 
   SERVICES = [
-    ["POST", 'service_rpc',      "/git/(.*?)/git-upload-pack$",  'upload-pack'],
-    ["POST", 'service_rpc',      "/git/(.*?)/git-receive-pack$", 'receive-pack'],
+    ["POST", 'service_rpc',      "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/git-upload-pack$",  'upload-pack'],
+    ["POST", 'service_rpc',      "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/git-receive-pack$", 'receive-pack'],
 
-    ["GET",  'get_info_refs',    "/git/(.*?)/info/refs$"],
-    ["GET",  'get_text_file',    "/git/(.*?)/HEAD$"],
-    ["GET",  'get_text_file',    "/git/(.*?)/objects/info/alternates$"],
-    ["GET",  'get_text_file',    "/git/(.*?)/objects/info/http-alternates$"],
-    ["GET",  'get_info_packs',   "/git/(.*?)/objects/info/packs$"],
-    ["GET",  'get_text_file',    "/git/(.*?)/objects/info/[^/]*$"],
-    ["GET",  'get_loose_object', "/git/(.*?)/objects/[0-9a-f]{2}/[0-9a-f]{38}$"],
-    ["GET",  'get_pack_file',    "/git/(.*?)/objects/pack/pack-[0-9a-f]{40}\\.pack$"],
-    ["GET",  'get_idx_file',     "/git/(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$"],
+    ["GET",  'get_info_refs',    "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/info/refs$"],
+    ["GET",  'get_text_file',    "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/HEAD$"],
+    ["GET",  'get_text_file',    "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/info/alternates$"],
+    ["GET",  'get_text_file',    "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/info/http-alternates$"],
+    ["GET",  'get_info_packs',   "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/info/packs$"],
+    ["GET",  'get_text_file',    "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/info/[^/]*$"],
+    ["GET",  'get_loose_object', "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/[0-9a-f]{2}/[0-9a-f]{38}$"],
+    ["GET",  'get_pack_file',    "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/pack/pack-[0-9a-f]{40}\\.pack$"],
+    ["GET",  'get_idx_file',     "/#{GitoliteConfig.gitolite_smart_http_prefix}/(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$"],
   ]
 
   def initialize()
@@ -116,12 +116,17 @@ class GitoliteHttpController < ApplicationController
 
     command = git_command("#{@rpc} --stateless-rpc .")
 
+    puts "###### SERVICE RPC ######"
+    puts "command    : #{command}"
+    #~ puts "input data : #{input}"
+    puts "#########################"
+
     IO.popen(command, File::RDWR) do |pipe|
       pipe.write(input)
       while !pipe.eof?
-        block = pipe.read(8192) # 8M at a time
+        block = pipe.read() # 8M at a time
         self.response_body = Enumerator.new do |y|
-          y << block
+          y << block.to_s
         end
       end
     end
@@ -134,10 +139,18 @@ class GitoliteHttpController < ApplicationController
     if has_access(service_name)
       command = git_command("#{service_name} --stateless-rpc --advertise-refs .")
       refs = %x[#{command}]
+      content_type = "application/x-git-#{service_name}-advertisement"
 
       self.response.status = 200
-      self.response.headers["Content-Type"] = "application/x-git-#{service_name}-advertisement"
+      self.response.headers["Content-Type"] = content_type
       hdr_nocache
+
+      puts "###### GET INFO REFS ######"
+      puts "command      : #{command}"
+      puts "refs         : #{refs}"
+      puts "content_type : #{content_type}"
+      puts "service_name : #{service_name}"
+      puts "###########################"
 
       self.response_body = Enumerator.new do |y|
         y << pkt_write("# service=git-#{service_name}\n")
@@ -184,15 +197,15 @@ class GitoliteHttpController < ApplicationController
     cmd = nil
     path = nil
     SERVICES.each do |method, handler, match, rpc|
-      if m = Regexp.new(match).match(@req.path_info)
-        return ['not_allowed'] if method != @req.request_method
+      if m = Regexp.new(match).match(@request.path_info)
+        return ['not_allowed'] if method != @request.request_method
         cmd = handler
         path = m[1]
-        file = @req.path_info.sub('/git/' + path + '/', '')
+        file = @request.path_info.sub("#{GitoliteConfig.gitolite_smart_http_prefix}/#{path}/", '')
 
         puts "###### ROUTING ######"
         puts "path      : #{path}"
-        puts "path info : #{@req.path_info}"
+        puts "path info : #{@request.path_info}"
         puts "file      : #{file}"
         puts "rpc       : #{rpc}"
         puts "#####################"
@@ -205,7 +218,7 @@ class GitoliteHttpController < ApplicationController
 
 
   def internal_send_file(requested_file, content_type, cache_parameter)
-    requested_file = File.join(@dir, requested_file)
+    requested_file = File.join(@repo_dir, requested_file)
 
     return render_not_found if !File.exists?(requested_file)
     return render_not_found if !File.size?(requested_file)
@@ -231,21 +244,12 @@ class GitoliteHttpController < ApplicationController
 
 
   def read_body
-    puts "###### READ BODY ######"
-    if @env["HTTP_CONTENT_ENCODING"] =~ /gzip/
-      puts "encoding : gzip"
-      input = Zlib::GzipReader.new(@req.body).read
-    else
-      puts "encoding : flat"
-      input = @req.body.read
-    end
-    puts "#######################"
-    return input
+    return @request.body.read
   end
 
 
   def get_service_type
-    service_type = @req.params['service']
+    service_type = @request.params['service']
     return false if !service_type
     return false if service_type[0, 4] != 'git-'
     service_type.gsub('git-', '')
@@ -254,7 +258,7 @@ class GitoliteHttpController < ApplicationController
 
   def has_access(rpc, check_content_type = false)
     if check_content_type
-      return false if @req.content_type != "application/x-git-%s-request" % rpc
+      return false if @request.content_type != "application/x-git-%s-request" % rpc
     end
     return false if !['upload-pack', 'receive-pack'].include? rpc
     if rpc == 'receive-pack'
@@ -291,7 +295,7 @@ class GitoliteHttpController < ApplicationController
 
 
   def git_command(command)
-    return "#{GitoliteHosting.git_user_runner()} 'cd #{@dir} && GL_BYPASS_UPDATE_HOOK=true git #{command}'"
+    return "#{GitoliteHosting.git_user_runner()} 'cd #{@repo_dir} && GL_BYPASS_UPDATE_HOOK=true git #{command}'"
   end
 
   # --------------------------------------

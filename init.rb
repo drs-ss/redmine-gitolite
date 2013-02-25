@@ -19,17 +19,16 @@ Redmine::Plugin.register :redmine_gitolite do
     :default => {
       # global settings
       'gitoliteIdentityPrivateKeyFile'     => (ENV['HOME'] + "/.ssh/redmine_gitolite_admin_id_rsa").to_s,
-      'gitoliteIdentityPublicKeyFile'      => (ENV['HOME'] + "/.ssh/redmine_gitolite_admin_id_rsa.pub").to_s,
       'gitoliteRepositoryAbsoluteBasePath' => '/home/git/repositories/',
       'gitoliteUser'                       => 'git',
-      'gitoliteServer'                     => 'localhost',
       'gitoliteServerDomain'               => 'example.com',
+      'gitoliteSmartHttpPrefix'            => 'smart',
       'gitoliteLockWaitTime'               => '10',
+      'gitoliteSslEnabled'                 => false,
       'gitoliteAllProjectsUseGit'          => true,
 
       # recycle bin settings
       'gitoliteRecycleBinDeleteRepositories' => true,
-      'gitoliteRecycleBinBasePath'           => 'recycle_bin/',
       'gitoliteRecycleBinExpireTime'         => '24.0',
     }
   })

@@ -15,8 +15,9 @@ module GitoliteConfig
   GITOLITE_SCRIPT_PARENT            = 'bin'
   GITOLITE_SSH_PRIVATE_KEY          = (ENV['HOME'] + "/.ssh/redmine_gitolite_admin_id_rsa").to_s
   GITOLITE_REPOSITORY_ABSOLUTE_PATH = '/home/git/repositories/'
+  GITOLITE_SSL_ENABLED              = false
   GITOLITE_ALL_PROJECTS_USE_GIT     = true
-
+  GITOLITE_SMART_HTTP_PREFIX        = 'smart'
 
   # Gitolite SSH Private Key
   def self.gitolite_ssh_private_key
@@ -40,10 +41,16 @@ module GitoliteConfig
 
   # Gitolite server
   def self.gitolite_server
-    if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteServer'].nil?
-      Setting.plugin_redmine_gitolite['gitoliteServer']
-    else
       GITOLITE_SERVER
+  end
+
+
+  # Gitolite Smart HTTP prefix
+  def self.gitolite_smart_http_prefix
+    if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteSmartHttpPrefix'].nil?
+      Setting.plugin_redmine_gitolite['gitoliteSmartHttpPrefix']
+    else
+      GITOLITE_SMART_HTTP_PREFIX
     end
   end
 
@@ -91,6 +98,20 @@ module GitoliteConfig
   end
 
 
+  # Gitolite SSL enabled?
+  def self.gitolite_ssl_enabled?
+    if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteSslEnabled'].nil?
+      if Setting.plugin_redmine_gitolite['gitoliteSslEnabled'] == 'true'
+        return true
+      else
+        return false
+      end
+    else
+      GITOLITE_SSL_ENABLED
+    end
+  end
+
+
   # All projects use Git?
   def self.all_projects_use_git?
     if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteAllProjectsUseGit'].nil?
@@ -117,11 +138,7 @@ module GitoliteConfig
 
   # Recycle bin base path (relative to git user home directory)
   def self.recycle_bin_base_path
-    if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteRecycleBinBasePath'].nil?
-      Setting.plugin_redmine_gitolite['gitoliteRecycleBinBasePath']
-    else
       GITOLITE_RECYCLE_BIN_BASE_PATH
-    end
   end
 
 

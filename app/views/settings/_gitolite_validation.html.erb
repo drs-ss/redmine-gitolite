@@ -25,16 +25,26 @@
 <br />
 
 <p>
-  <label><%= l(:label_gitolite_read_only_url)%></label>
-  http://<%= GitoliteConfig.gitolite_server_domain %>/projects/(project_name)/repository/(repository_name)
+  <label><%= l(:label_gitolite_browse_url)%></label>
+  <% GitoliteConfig.gitolite_ssl_enabled? ? scheme = 'https' : scheme = 'http' %>
+  <%= scheme %>://<%= GitoliteConfig.gitolite_server_domain %>/projects/&lt;project_name&gt;/repository/&lt;repository_name&gt;
   <br />
 </p>
 
 <br />
 
 <p>
-  <label><%= l(:label_gitolite_developer_url)%></label>
-  <%= GitoliteConfig.gitolite_user %>@<%= GitoliteConfig.gitolite_server_domain %>:(repository_path)
+  <label><%= l(:label_gitolite_ssh_url)%></label>
+  <%= GitoliteConfig.gitolite_user %>@<%= GitoliteConfig.gitolite_server_domain %>:&lt;repository_path&gt;
+  <br />
+</p>
+
+<br />
+
+<p>
+  <label><%= l(:label_gitolite_http_url)%></label>
+  <% GitoliteConfig.gitolite_ssl_enabled? ? scheme = 'https' : scheme = 'http' %>
+  <%= scheme %>://&lt;redmine user&gt;@<%= GitoliteConfig.gitolite_server_domain %>/<%= GitoliteConfig.gitolite_smart_http_prefix %>/&lt;repository_path&gt;
   <br />
 </p>
 

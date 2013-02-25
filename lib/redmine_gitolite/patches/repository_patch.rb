@@ -27,11 +27,13 @@ module RedmineGitolite
         end
 
         def gitolite_browse_url
-          return "http://#{GitoliteConfig.gitolite_server_domain}/projects/#{project.identifier}/repository/#{identifier}"
+          GitoliteConfig.gitolite_ssl_enabled? ? scheme = 'https' : scheme = 'http'
+          return "#{scheme}://#{GitoliteConfig.gitolite_server_domain}/projects/#{project.identifier}/repository/#{identifier}"
         end
 
         def gitolite_http_url
-          return "http://#{User.current.login}@#{GitoliteConfig.gitolite_server_domain}/git/#{project.identifier}/#{identifier}.git"
+          GitoliteConfig.gitolite_ssl_enabled? ? scheme = 'https' : scheme = 'http'
+          return "#{scheme}://#{User.current.login}@#{GitoliteConfig.gitolite_server_domain}/#{GitoliteConfig.gitolite_smart_http_prefix}/#{project.identifier}/#{identifier}.git"
         end
 
         def gitolite_git_url
