@@ -18,6 +18,9 @@ module GitoliteConfig
   GITOLITE_SSL_ENABLED              = false
   GITOLITE_ALL_PROJECTS_USE_GIT     = true
   GITOLITE_SMART_HTTP_PREFIX        = 'smart'
+  GITOLITE_DEFAULT_SMART_HTTP       = true
+  GITOLITE_DEFAULT_GIT_DAEMON       = true
+
 
   # Gitolite SSH Private Key
   def self.gitolite_ssh_private_key
@@ -122,6 +125,24 @@ module GitoliteConfig
       end
     else
       GITOLITE_ALL_PROJECTS_USE_GIT
+    end
+  end
+
+
+  def self.gitolite_default_smart_http
+    if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteDefaultSmartHttp'].nil?
+      Setting.plugin_redmine_gitolite['gitoliteDefaultSmartHttp']
+    else
+      GITOLITE_DEFAULT_SMART_HTTP
+    end
+  end
+
+
+  def self.gitolite_default_git_daemon
+    if !Setting.plugin_redmine_gitolite.nil? and !Setting.plugin_redmine_gitolite['gitoliteDefaultGitDaemon'].nil?
+      Setting.plugin_redmine_gitolite['gitoliteDefaultGitDaemon']
+    else
+      GITOLITE_DEFAULT_GIT_DAEMON
     end
   end
 

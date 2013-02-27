@@ -6,6 +6,7 @@ module RedmineGitolite
       def self.included(base)
         base.send(:include, InstanceMethods)
         base.class_eval do
+          has_one :git_extra, :foreign_key =>'repository_id', :class_name => 'GitoliteRepositoryExtra', :dependent => :destroy
           after_create :update_values
         end
       end
