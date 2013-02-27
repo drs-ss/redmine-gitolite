@@ -164,16 +164,12 @@ Or
 
     $ vim .gitolite.rc
     * If you are running Gitolite v2 :
-    * [add ".*" to the GL_GIT_CONFIG_KEYS setting]
-
-    * If you are running Gitolite v3 :
-    * [add ".*" to the GL_GIT_CONFIG_KEYS setting]
-
-    * In both cases add :
+    * [ set $GL_GITCONFIG_KEYS = ".*"; ]
     * [ set $REPO_UMASK = 0022; ]
 
-    $ gl-setup
-
+    * If you are running Gitolite v3 :
+    * [ set GIT_CONFIG_KEYS => '.*', ]
+    * [ set UMASK => 0022, ]
 
 8. Configure plugin in Redmine settings
 
