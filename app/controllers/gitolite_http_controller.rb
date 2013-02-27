@@ -109,10 +109,8 @@ class GitoliteHttpController < ApplicationController
 
   def service_rpc
     return render_no_access if !has_access(@rpc, true)
-    input = read_body
 
-    self.response.headers["Content-Type"] = "application/x-git-%s-result" % @rpc
-    self.response.status = 200
+    input = read_body
 
     command = git_command("#{@rpc} --stateless-rpc .")
 
@@ -121,10 +119,13 @@ class GitoliteHttpController < ApplicationController
     #~ puts "input data : #{input}"
     puts "#########################"
 
+    self.response.headers["Content-Type"] = "application/x-git-%s-result" % @rpc
+    self.response.status = 200
+
     IO.popen(command, File::RDWR) do |pipe|
       pipe.write(input)
       while !pipe.eof?
-        block = pipe.read() # 8M at a time
+        block = pipe.read()
         self.response_body = Enumerator.new do |y|
           y << block.to_s
         end
@@ -141,16 +142,16 @@ class GitoliteHttpController < ApplicationController
       refs = %x[#{command}]
       content_type = "application/x-git-#{service_name}-advertisement"
 
-      self.response.status = 200
-      self.response.headers["Content-Type"] = content_type
-      hdr_nocache
-
       puts "###### GET INFO REFS ######"
       puts "command      : #{command}"
       puts "refs         : #{refs}"
       puts "content_type : #{content_type}"
       puts "service_name : #{service_name}"
       puts "###########################"
+
+      self.response.status = 200
+      self.response.headers["Content-Type"] = content_type
+      hdr_nocache
 
       self.response_body = Enumerator.new do |y|
         y << pkt_write("# service=git-#{service_name}\n")
