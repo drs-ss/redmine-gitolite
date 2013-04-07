@@ -34,6 +34,11 @@ Redmine::Plugin.register :redmine_gitolite do
       'gitoliteRecycleBinExpireTime'         => '24.0',
     }
   })
+
+  project_module :repository do
+    permission :restricted_commit, {}, :require => :member
+  end
+
 end
 
 # initialize observer
