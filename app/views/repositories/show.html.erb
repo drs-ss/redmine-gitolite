@@ -72,7 +72,7 @@
 
 <% if @repository.is_a?(Repository::Git) %>
     <% content_for :sidebar do %>
-        <%= render partial: 'sidebar_git_info'%>
+	<%= render :partial => 'sidebar_git_info' %>
     <% end %>
 <% end %>
 
