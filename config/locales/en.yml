@@ -28,6 +28,8 @@ en:
   label_gitolite_ssl_enabled: SSL Enabled?
 
   label_gitolite_all_projects_use_git: Automatically Initialize Git Repositories For New Projects
+  label_gitolite_all_projects_use_git_daemon: Automatically Initialize Daemon Git For New Projects
+  label_gitolite_all_projects_use_git_smart: Automatically Initialize Smart HTTP For New Projects
 
   ## RECYCLE BIN SETTINGS
   label_gitolite_recycle_bin_settings: Gitolite Recycle Bin
