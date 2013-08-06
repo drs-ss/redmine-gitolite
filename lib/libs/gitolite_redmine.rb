@@ -249,16 +249,26 @@ module GitoliteRedmine
       write = write_users.map{|usr| usr.login.underscore.gsub(/[^0-9a-zA-Z\-\_]/,'_')}.sort
       personal = personal_users.map{|usr| usr.login.underscore.gsub(/[^0-9a-zA-Z\-\_]/,'_')}.sort
       read = read_users.map{|usr| usr.login.underscore.gsub(/[^0-9a-zA-Z\-\_]/,'_')}.sort
+      deny = []
 
       read << "redmine"
-      read << "daemon" if User.anonymous.allowed_to?(:view_changesets, project)
-      read << "gitweb" if User.anonymous.allowed_to?(:view_gitweb, project)
+      if project.is_public?
+        if Role.non_member.allowed_to?(:view_changesets)
+            read = ["@all"]
+            deny << "daemon" unless Role.anonymous.allowed_to?(:view_changesets)
+            deny << "gitweb" unless Role.anonymous.allowed_to?(:view_gitweb)
+        else
+            read << "daemon" if Role.anonymous.allowed_to?(:view_changesets)
+            read << "gitweb" if Role.anonymous.allowed_to?(:view_gitweb)
+        end
+      end
 
       permissions = {}
       permissions["RW+"] = {"" => rewind} unless rewind.empty?
       permissions["RW"] = {"" => write} unless write.empty?
       permissions["RW+ personal/USER/"] = {"" => personal} unless personal.empty?
       permissions["R"] = {"" => read} unless read.empty?
+      permissions["-"] = {"" => deny} unless deny.empty?
 
       [permissions]
     end
