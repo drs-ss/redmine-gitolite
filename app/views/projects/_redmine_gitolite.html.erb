@@ -13,6 +13,20 @@
       <% end %>
     </p>
 
+    <% if Setting.plugin_redmine_gitolite['gitoliteDefaultGitDaemon'] == "true" %>
+    <p>
+      <% if User.current.allowed_to?(:view_changesets, @project) %>
+        <strong><%= l(:label_git_daemon_access) %> :</strong><br />
+        <ul>
+          <% @project.repositories.select{|r| r.is_a?(Repository::Git)}.each do |repo| %>
+            <li><%= link_to repo.gitolite_daemon_url %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </p>
+    <% end %>
+
+    <% if Setting.plugin_redmine_gitolite['gitoliteDefaultSmartHttp'] == "true" %>
     <p>
       <% if User.current.allowed_to?(:commit_access, @project) %>
         <strong><%= l(:label_git_http_access) %> :</strong><br />
@@ -23,6 +37,7 @@
         </ul>
       <% end %>
     </p>
+    <% end %>
 
     <p>
       <% if User.current.allowed_to?(:commit_access, @project) %>

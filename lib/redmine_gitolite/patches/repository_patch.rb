@@ -32,6 +32,10 @@ module RedmineGitolite
           return "#{scheme}://#{GitoliteConfig.gitolite_server_domain}/projects/#{project.identifier}/repository/#{identifier}"
         end
 
+        def gitolite_daemon_url
+          return "git://#{GitoliteConfig.gitolite_server_domain}/#{project.identifier}/#{identifier}"
+        end
+
         def gitolite_http_url
           GitoliteConfig.gitolite_ssl_enabled? ? scheme = 'https' : scheme = 'http'
           return "#{scheme}://#{User.current.login}@#{GitoliteConfig.gitolite_server_domain}/#{GitoliteConfig.gitolite_smart_http_prefix}/#{project.identifier}/#{identifier}.git"

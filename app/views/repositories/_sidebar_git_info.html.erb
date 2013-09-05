@@ -2,8 +2,13 @@
 
 <h3><%= l(:label_git_repository_info) %> :</h3>
   <div id="git_info">
+    <%= l(:label_git_daemon_access) %> : <pre class="autoscroll"><%= link_to @repository.gitolite_daemon_url %></pre>
+    <% if Setting.plugin_redmine_gitolite['gitoliteDefaultSmartHttp'] == "true" %>
     <%= l(:label_git_http_access) %> : <pre class="autoscroll"><%= link_to @repository.gitolite_http_url, @repository.gitolite_http_url %></pre>
+    <% end %>
+    <% if Setting.plugin_redmine_gitolite['gitoliteDefaultGitDaemon'] == "true" %>
     <%= l(:label_git_ssh_access) %> : <pre class='autoscroll'><%= @repository.gitolite_git_url %></pre>
+    <% end %>
   </div>
 
 <br />
