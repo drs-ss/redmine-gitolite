@@ -8,7 +8,11 @@ module RedmineGitolite
       end
 
       def git_field_tags_with_disabled_configuration(form, repository)
-        ''
+        content_tag('p', form.text_field(
+                          :extra_protected_refexes, :label => l(:label_git_protected_refexes),
+                          :size => 30) +
+                          '<br />'.html_safe +
+                          '<em class="info">Gitolite refexes that only repository managers can push to.</em>'.html_safe)
       end
 
     end

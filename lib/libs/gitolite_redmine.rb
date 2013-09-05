@@ -149,7 +149,7 @@ module GitoliteRedmine
                 @gitolite_admin.config.add_repo(repo_conf)
 
                 users = project.member_principals.map(&:user).compact.uniq
-                repo_conf.permissions = build_permissions(users, project)
+                repo_conf.permissions = build_permissions(users, project, repository)
               end
 
             end
@@ -207,7 +207,7 @@ module GitoliteRedmine
           @gitolite_admin.config.add_repo(repo_conf)
         end
 
-        repo_conf.permissions = build_permissions(users, project)
+        repo_conf.permissions = build_permissions(users, project, repository)
       end
     end
 
@@ -239,7 +239,7 @@ module GitoliteRedmine
     end
 
 
-    def build_permissions(users, project)
+    def build_permissions(users, project, repository)
       rewind_users = users.select{|user| user.allowed_to?(:manage_repository, project) }
       write_users = users.select{|user| user.allowed_to?(:commit_access, project) && !user.allowed_to?(:manage_repository, project) }
       personal_users = users.select{|user| (user.allowed_to?(:commit_access, project) || user.allowed_to?(:restricted_commit, project)) && !user.allowed_to?(:manage_repository, project)}
@@ -265,6 +265,10 @@ module GitoliteRedmine
 
       permissions = {}
       permissions["RW+"] = {"" => rewind} unless rewind.empty?
+      if repository.extra_protected_refexes != ""
+          permissions["R   #{repository.extra_protected_refexes}"] = {"" => write} unless write.empty?
+          permissions["-   #{repository.extra_protected_refexes}"] = {"" => write} unless write.empty?
+      end
       permissions["RW"] = {"" => write} unless write.empty?
       permissions["RW+ personal/USER/"] = {"" => personal} unless personal.empty?
       permissions["R"] = {"" => read} unless read.empty?

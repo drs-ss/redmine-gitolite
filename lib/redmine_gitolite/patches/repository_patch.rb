@@ -22,6 +22,17 @@ module RedmineGitolite
           end
         end
 
+        def protected_refexes
+          extra_protected_refexes
+        end
+
+        def extra_protected_refexes
+            return "" if extra_info.nil?
+            v = extra_info["extra_protected_refexes"]
+            return "" if v.nil?
+            v.to_s
+        end
+
         # Use directory notation: <project identifier>/<repo identifier>
         def git_label
           return "#{project.identifier}/#{identifier}"

@@ -68,6 +68,9 @@ en:
   label_true: "True"
   label_false: "False"
 
+  ## GIT REPOSITORY SETTINGS
+  label_git_protected_refexes: Protected Gitolite Refexes
+
   ## GIT INSTRUCTIONS
   label_git_setup: Git Setup
   label_download_and_install_git: Download and Install Git
