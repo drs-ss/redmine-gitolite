@@ -44,7 +44,7 @@ module RedmineGitolite
         end
 
         def gitolite_daemon_url
-          return "git://#{GitoliteConfig.gitolite_server_domain}/#{project.identifier}/#{identifier}"
+          return "git://#{GitoliteConfig.gitolite_server_domain}/#{GitoliteHosting.repository_name(self)}"
         end
 
         def gitolite_http_url
