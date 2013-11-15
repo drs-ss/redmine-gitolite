@@ -5,7 +5,7 @@
   <h2><%= l(:label_git_setup) %> :</h2>
   <pre>
     <a href="http://git-scm.com/download" target="_blank"><%= l(:label_download_and_install_git) %></a>
-    git config --global user.name "<%= User.current.login %>"
+    git config --global user.name "<%= User.current.firstname %> <%= User.current.lastname %>"
     git config --global user.email <%= User.current.mail %>
   </pre>
 
