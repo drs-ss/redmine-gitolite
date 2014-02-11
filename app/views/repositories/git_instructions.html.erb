@@ -21,7 +21,7 @@
     cd <%= @repository.identifier %>
     git init
     git add .
-    git commit -m '<%= l(:label_initializing_repository) %> <%= @project.identifier %>'
+    git commit -m '<%= l(:label_initializing_repository) %> <%= @repository.identifier %>'
     git remote add origin <%= @repository.gitolite_git_url %>
     git push -u origin master
   </pre>
